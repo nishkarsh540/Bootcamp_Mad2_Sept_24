@@ -1,11 +1,36 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import store from '../store';
 import HomeView from '../views/HomeView.vue'
-
+import SignupUser from '../auth/SignupUser.vue'
+import LoginUser from '../auth/LoginUser.vue'
+import AdminDashboard from '../views/AdminDashboard.vue'
+import UserDashboard from '../views/UserDashboard.vue'
 const routes = [
   {
     path: '/',
     name: 'home',
     component: HomeView
+  },
+  {
+    path: '/admin-dashboard',
+    name: 'admin',
+    component: AdminDashboard,
+    meta:{ requiresAuth:true,roles:['admin']}
+  },
+  {
+    path: '/user-dashboard',
+    name: 'user',
+    component: UserDashboard
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginUser
+  },
+  {
+    path: '/signup',
+    name: 'Signup',
+    component: SignupUser
   },
   {
     path: '/about',
@@ -21,5 +46,26 @@ const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
 })
+
+// //Navigation Guard
+router.beforeEach((to,from,next) =>{
+  if (to.meta.requiresAuth){
+    if (!store.getters.isAuthenticated){
+      next('/login')
+    } else {
+      console.log(store.getters.userRole);
+      const userRole = store.getters.userRole;
+
+      if (to.meta.roles && !to.meta.roles.includes(userRole)){
+        next('/login');
+      } else {
+        next();
+      }
+    }
+  } else {
+    next();
+  }
+});
+
 
 export default router

@@ -15,6 +15,7 @@ class User(db.Model):
     username = db.Column(db.String,unique=True,nullable=False)
     password = db.Column(db.String,nullable=False)
     role = db.Column(db.String,default='user')
+    approved = db.Column(db.Boolean,default=False)
 
 
     def __repr__(self):
@@ -26,7 +27,7 @@ with app.app_context():
     if User.query.filter_by(username='admin').first() is None:
         admin_password = generate_password_hash('adminpassword')
 
-        admin = User(username='admin',password=admin_password,role='admin')
+        admin = User(username='admin',password=admin_password,role='admin',approved=True)
 
         db.session.add(admin)
         db.session.commit()
