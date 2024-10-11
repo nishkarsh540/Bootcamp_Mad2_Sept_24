@@ -5,11 +5,18 @@ import SignupUser from '../auth/SignupUser.vue'
 import LoginUser from '../auth/LoginUser.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import UserDashboard from '../views/UserDashboard.vue'
+import CategoryManage from '@/views/CategoryManage.vue';
 const routes = [
   {
     path: '/',
     name: 'home',
     component: HomeView
+  },
+  {
+    path: '/category_manage',
+    name: 'CategoryManage',
+    component: CategoryManage,
+    meta:{ requiresAuth:true,roles:['admin']}
   },
   {
     path: '/admin-dashboard',

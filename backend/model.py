@@ -21,6 +21,15 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+class Category(db.Model):
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String,nullable=False,unique=True)
+
+    def __repr__(self):
+        return f'<Category {self.name}>'
+    
+
+
 with app.app_context():
     db.create_all()
 
@@ -33,3 +42,14 @@ with app.app_context():
         db.session.commit()
     else:
         print('Admin Already exists')
+
+    if Category.query.count()==0:
+        fruits = Category(name='Fruits')
+        vegetables = Category(name='Vegetables')
+        dairy = Category(name='Dairy')
+
+        db.session.add_all([fruits,vegetables,dairy])
+        db.session.commit()
+    else:
+        print('Categories alrady exists')
+    
