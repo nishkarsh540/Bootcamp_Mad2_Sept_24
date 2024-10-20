@@ -3,7 +3,7 @@
 import {createStore} from 'vuex';
 import router from '../router';
 import {jwtDecode} from 'jwt-decode';
-
+import axios from 'axios';
 
 export default createStore({
     state:{
@@ -39,10 +39,22 @@ export default createStore({
             }
         },
         logout(state){
-            state.token = '';
-            state.user = null;
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            const accessToken = this.state.token;
+            axios.post('/logout', null,{
+                    headers:{
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                })
+                .then(()=>{
+                    state.token = '';
+                    state.user = null;
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                })
+                .catch(error=>{
+                    console.error(error);
+                })
+            
         }
     },
     actions:{

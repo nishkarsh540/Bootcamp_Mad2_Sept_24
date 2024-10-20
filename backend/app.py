@@ -1,13 +1,23 @@
 from flask import Flask,jsonify,make_response,request
 from flask_restful import Api,Resource,reqparse
-from flask_jwt_extended import JWTManager,create_access_token,jwt_required,get_jwt_identity
+from flask_jwt_extended import JWTManager,create_access_token,jwt_required,get_jwt_identity,unset_jwt_cookies
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash,check_password_hash
 from model import db,User
 from Management.category import category_bp
+from datetime import timedelta
 
+#Caching
+import redis
+from flask_caching import Cache
 
 app = Flask(__name__)
+
+#cache configuration
+redis_client = redis.Redis(host='localhost',port=6379,db=0)
+cache = Cache(app,config={'CACHE_TYPE':'redis','CACHE_REDIS':redis_client})
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///grocery.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] =False
 app.config['JWT_SECRET_KEY'] = 'grocery'
@@ -58,7 +68,7 @@ class LoginResource(Resource):
         if user.approved==False:
             return {'message':'Please wait for approval from admin'},400
         if user and check_password_hash(user.password,args['password']):
-            access_token = create_access_token(identity=user.role)
+            access_token = create_access_token(identity=user.role,expires_delta=timedelta(days=1))
             user_info = {
                 "id":user.id,
                 "username":user.username,
@@ -69,9 +79,17 @@ class LoginResource(Resource):
         else:
             return {'message':'Invalid Username or password'},401
 
-
+class Logout(Resource):
+    @jwt_required()
+    def post(self):
+        role = get_jwt_identity()
+        print(role)
+        resp = {"message":"Logged out successfully"}
+        unset_jwt_cookies(jsonify(resp))
+        return resp,200
 
 class UserInfo(Resource):
+    @cache.cached(timeout=10)
     def get(self):
         users = User.query.all()
         user_info = [{
@@ -120,12 +138,37 @@ class PendingManager(Resource):
 
         return ({"message":'manager action succesfully processed'}),200
 
+class StatPage(Resource):
+    def get(self):
+        roles_count = db.session.query(User.role,db.func.count(User.id)).group_by(User.role).all()
 
+        return jsonify({role:count for role,count in roles_count})
+
+class ExportResource(Resource):
+    def post(self):
+        try:
+            from tasks import export_categories_details_as_csv
+
+            csv_data = export_categories_details_as_csv()
+
+            response = make_response(csv_data)
+
+            response.headers['Content-Disposition'] ='attachment;filename=category_report.csv'
+
+            response.headers['Content-type'] = 'text/csv'
+
+            return response
+        
+        except Exception as e:
+            return jsonify(e),500
+
+api.add_resource(ExportResource,'/exportcsv')
+api.add_resource(StatPage,'/api/stat')
 api.add_resource(PendingManager,'/api/admin/pending_managers')
 api.add_resource(SignupResource,'/api/signup')
 api.add_resource(LoginResource,'/api/login')
 api.add_resource(UserInfo,'/userinfo')
-
+api.add_resource(Logout,'/logout')
 
 if __name__ == "__main__":
     app.run(debug=True)

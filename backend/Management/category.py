@@ -2,6 +2,7 @@ from flask import Blueprint,jsonify,request
 from flask_restful import Api,Resource,reqparse
 from model import db,Category
 
+
 category_bp = Blueprint('category_bp',__name__)
 
 api = Api(category_bp)

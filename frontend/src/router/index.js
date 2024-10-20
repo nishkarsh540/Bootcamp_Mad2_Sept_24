@@ -6,11 +6,17 @@ import LoginUser from '../auth/LoginUser.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import UserDashboard from '../views/UserDashboard.vue'
 import CategoryManage from '@/views/CategoryManage.vue';
+import StatPage from '@/views/StatPage.vue';
 const routes = [
   {
     path: '/',
     name: 'home',
     component: HomeView
+  },
+  {
+    path: '/stat',
+    name: 'stat',
+    component: StatPage
   },
   {
     path: '/category_manage',
